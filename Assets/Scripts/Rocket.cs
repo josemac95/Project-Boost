@@ -4,9 +4,17 @@ using UnityEngine;
 
 public class Rocket : MonoBehaviour
 {
+	// Componente RigidBody del cohete
+	Rigidbody rigidBody;
+
+	// Intensidad de la fuerza vertical (local)
+	[SerializeField]
+	float f = 10f;
+
 	void Start()
 	{
-
+		// Versión gameObject.* hace lo mismo, pero es diferente
+		rigidBody = GetComponent<Rigidbody>();
 	}
 
 	void Update()
@@ -20,7 +28,8 @@ public class Rocket : MonoBehaviour
 		// Movimiento
 		if (Input.GetKey(KeyCode.Space))
 		{
-			print("Thrusting");
+			// Vector up como fuerza relativa
+			rigidBody.AddRelativeForce(f * Vector3.up);
 		}
 		// Rotación
 		if (Input.GetKey(KeyCode.A))
