@@ -21,6 +21,15 @@ public class Rocket : MonoBehaviour
 	// que haya en el inspector
 	[SerializeField] float rcsThrust = 250f;
 
+	// Estados del cohete
+	enum State { Alive, Dying, Trascending }
+
+	// Estado actual del cohete
+	State state = State.Alive;
+
+	// Tiempo de carga
+	float loadTime = 1f;
+
 	void Start()
 	{
 		// Versión gameObject.* hace lo mismo, pero es diferente
@@ -31,26 +40,49 @@ public class Rocket : MonoBehaviour
 	void Update()
 	{
 		Audio();
-		Thrust();
-		Rotate();
+		// Si esta vivo permite el control
+		if (state == State.Alive)
+		{
+			Thrust();
+			Rotate();
+		}
 	}
 
 	// Si choca con un objeto
 	void OnCollisionEnter(Collision collision)
 	{
+		// Si no esta vivo, nada
+		if (state != State.Alive) return;
+		// Si esta vivo
 		switch (collision.gameObject.tag)
 		{
 			case "Friendly":
 				// No pasa nada
 				break;
 			case "Finish":
-				SceneManager.LoadScene(1);
+				state = State.Trascending;
+				// Carga la siguiente escena en 1 s
+				Invoke("LoadNextLevel", loadTime);
 				break;
 			default:
 				// Mueres
-				SceneManager.LoadScene(0);
+				state = State.Dying;
+				// Carga la siguiente escena en 1 s
+				Invoke("LoadFirstLevel", loadTime);
 				break;
 		}
+	}
+
+	// Carga la siguiente escena (utilizado con invoke)
+	private void LoadNextLevel()
+	{
+		SceneManager.LoadScene(1);
+	}
+
+	// Carga la primera escena (utilizado con invoke)
+	private void LoadFirstLevel()
+	{
+		SceneManager.LoadScene(0);
 	}
 
 	private void Audio()
@@ -62,6 +94,12 @@ public class Rocket : MonoBehaviour
 			audioSource.Play();
 		}
 		else if (Input.GetKeyUp(KeyCode.Space))
+		{
+			// Para el sonido del cohete
+			audioSource.Stop();
+		}
+		// Si esta muriendo
+		if (state == State.Dying)
 		{
 			// Para el sonido del cohete
 			audioSource.Stop();
