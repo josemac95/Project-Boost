@@ -21,6 +21,13 @@ public class Rocket : MonoBehaviour
 	// que haya en el inspector
 	[SerializeField] float rcsThrust = 250f;
 
+	// Clip de audio para el motor del cohete
+	[SerializeField] AudioClip mainEngine;
+	// Clip de audio para la victoria
+	[SerializeField] AudioClip victory;
+	// Clip de audio para la muerte
+	[SerializeField] AudioClip death;
+
 	// Estados del cohete
 	enum State { Alive, Dying, Trascending }
 
@@ -39,12 +46,11 @@ public class Rocket : MonoBehaviour
 
 	void Update()
 	{
-		Audio();
 		// Si esta vivo permite el control
 		if (state == State.Alive)
 		{
-			Thrust();
-			Rotate();
+			RespondToThrustInput();
+			RespondToRotateInput();
 		}
 	}
 
@@ -60,17 +66,36 @@ public class Rocket : MonoBehaviour
 				// No pasa nada
 				break;
 			case "Finish":
-				state = State.Trascending;
-				// Carga la siguiente escena en 1 s
-				Invoke("LoadNextLevel", loadTime);
+				StartSuccessSecuence();
 				break;
 			default:
-				// Mueres
-				state = State.Dying;
-				// Carga la siguiente escena en 1 s
-				Invoke("LoadFirstLevel", loadTime);
+				StartDeathSecuence();
 				break;
 		}
+	}
+
+	// Secuencia para la victoria
+	private void StartSuccessSecuence()
+	{
+		state = State.Trascending;
+		// Sonido de victoria
+		audioSource.Stop();
+		audioSource.PlayOneShot(victory);
+		// Carga la siguiente escena en 1 s
+		Invoke("LoadNextLevel", loadTime);
+	}
+
+	// Secuencia para la muerte
+
+	private void StartDeathSecuence()
+	{
+		// Mueres
+		state = State.Dying;
+		// Sonido de muerte
+		audioSource.Stop();
+		audioSource.PlayOneShot(death);
+		// Carga la siguiente escena en 1 s
+		Invoke("LoadFirstLevel", loadTime);
 	}
 
 	// Carga la siguiente escena (utilizado con invoke)
@@ -85,43 +110,40 @@ public class Rocket : MonoBehaviour
 		SceneManager.LoadScene(0);
 	}
 
-	private void Audio()
-	{
-		// Control de sonido
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			// Reproduce el sonido del cohete
-			audioSource.Play();
-		}
-		else if (Input.GetKeyUp(KeyCode.Space))
-		{
-			// Para el sonido del cohete
-			audioSource.Stop();
-		}
-		// Si esta muriendo
-		if (state == State.Dying)
-		{
-			// Para el sonido del cohete
-			audioSource.Stop();
-		}
-	}
-
 	// Propulsión del cohete
-	private void Thrust()
+	private void RespondToThrustInput()
 	{
 		// Movimiento
 		if (Input.GetKey(KeyCode.Space))
 		{
-			// Fuerza relativa (coordenadas locales)
-			// a · t como velocidad
-			// Cantidad de propulsión para este frame
-			// Debe superar a la gravedad para despegar
-			rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
+			ApplyThrust();
+		}
+		else
+		{
+			// Para el sonido del cohete
+			audioSource.Stop();
+		}
+	}
+
+	private void ApplyThrust()
+	{
+		// Fuerza relativa (coordenadas locales)
+		// a · t como velocidad
+		// Cantidad de propulsión para este frame
+		// Debe superar a la gravedad para despegar
+		rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
+		// Si no se está reproduciendo un audio
+		// => No poner el loop en AudioSource
+		// => No hay solapamiento de audio
+		if (!audioSource.isPlaying)
+		{
+			// Reproduce el sonido del cohete
+			audioSource.PlayOneShot(mainEngine);
 		}
 	}
 
 	// Rota el cohete
-	private void Rotate()
+	private void RespondToRotateInput()
 	{
 		// Control manual de la rotación
 		rigidBody.freezeRotation = true;
