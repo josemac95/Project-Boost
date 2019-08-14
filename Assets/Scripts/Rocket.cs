@@ -22,11 +22,22 @@ public class Rocket : MonoBehaviour
 	[SerializeField] float rcsThrust = 250f;
 
 	// Clip de audio para el motor del cohete
-	[SerializeField] AudioClip mainEngine;
+	[SerializeField] AudioClip mainEngineSound;
 	// Clip de audio para la victoria
-	[SerializeField] AudioClip victory;
+	[SerializeField] AudioClip victorySound;
 	// Clip de audio para la muerte
-	[SerializeField] AudioClip death;
+	[SerializeField] AudioClip deathSound;
+
+
+	// Para el sistema de partículas, hay que instanciar los prefabs de partículas
+	// y desde el inspector se asocian las instancias en la escena
+
+	// Partículas para el motor del cohete
+	[SerializeField] ParticleSystem mainEngineParticles;
+	// Partículas para la victoria
+	[SerializeField] ParticleSystem victoryParticles;
+	// Partículas para la muerte
+	[SerializeField] ParticleSystem deathParticles;
 
 	// Estados del cohete
 	enum State { Alive, Dying, Trascending }
@@ -46,7 +57,7 @@ public class Rocket : MonoBehaviour
 
 	void Update()
 	{
-		// Si esta vivo permite el control
+		// Si está vivo permite el control
 		if (state == State.Alive)
 		{
 			RespondToThrustInput();
@@ -57,16 +68,16 @@ public class Rocket : MonoBehaviour
 	// Si choca con un objeto
 	void OnCollisionEnter(Collision collision)
 	{
-		// Si no esta vivo, nada
+		// Si no está vivo, nada
 		if (state != State.Alive) return;
-		// Si esta vivo
+		// Si está vivo
 		switch (collision.gameObject.tag)
 		{
 			case "Friendly":
 				// No pasa nada
 				break;
 			case "Finish":
-				StartSuccessSecuence();
+				StartVictorySecuence();
 				break;
 			default:
 				StartDeathSecuence();
@@ -75,12 +86,15 @@ public class Rocket : MonoBehaviour
 	}
 
 	// Secuencia para la victoria
-	private void StartSuccessSecuence()
+	private void StartVictorySecuence()
 	{
 		state = State.Trascending;
 		// Sonido de victoria
 		audioSource.Stop();
-		audioSource.PlayOneShot(victory);
+		audioSource.PlayOneShot(victorySound);
+		// Partículas de victoria
+		mainEngineParticles.Stop();
+		victoryParticles.Play();
 		// Carga la siguiente escena en 1 s
 		Invoke("LoadNextLevel", loadTime);
 	}
@@ -93,7 +107,10 @@ public class Rocket : MonoBehaviour
 		state = State.Dying;
 		// Sonido de muerte
 		audioSource.Stop();
-		audioSource.PlayOneShot(death);
+		audioSource.PlayOneShot(deathSound);
+		// Partículas de muerte
+		mainEngineParticles.Stop();
+		deathParticles.Play();
 		// Carga la siguiente escena en 1 s
 		Invoke("LoadFirstLevel", loadTime);
 	}
@@ -122,6 +139,8 @@ public class Rocket : MonoBehaviour
 		{
 			// Para el sonido del cohete
 			audioSource.Stop();
+			// Partículas del cohete
+			mainEngineParticles.Stop();
 		}
 	}
 
@@ -138,8 +157,10 @@ public class Rocket : MonoBehaviour
 		if (!audioSource.isPlaying)
 		{
 			// Reproduce el sonido del cohete
-			audioSource.PlayOneShot(mainEngine);
+			audioSource.PlayOneShot(mainEngineSound);
 		}
+		// Tras el sonido, las partículas
+		mainEngineParticles.Play();
 	}
 
 	// Rota el cohete
