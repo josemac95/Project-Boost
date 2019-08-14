@@ -28,6 +28,9 @@ public class Oscillator : MonoBehaviour
 
 	void Update()
 	{
+		// Protección contra NaN (not a number)
+		// Versión float para la división por 0
+		if (period <= Mathf.Epsilon) return;
 		// Número de ciclos (crece continuamente desde 0)
 		// Es t · f (tiempo por frecuencia)
 		float cycles = Time.time / period;
