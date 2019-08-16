@@ -21,13 +21,23 @@ public class Rocket : MonoBehaviour
 	// que haya en el inspector
 	[SerializeField] float rcsThrust = 250f;
 
+	// Tiempo de carga
+	float loadTime = 1f;
+
+	// Estados del cohete
+	enum State { Alive, Dying, Trascending }
+	// Estado actual del cohete
+	State state = State.Alive;
+
+	// Colisiones desactivadas
+	bool collisionsDisabled = false;
+
 	// Clip de audio para el motor del cohete
 	[SerializeField] AudioClip mainEngineSound;
 	// Clip de audio para la victoria
 	[SerializeField] AudioClip victorySound;
 	// Clip de audio para la muerte
 	[SerializeField] AudioClip deathSound;
-
 
 	// Para el sistema de partículas, hay que instanciar los prefabs de partículas
 	// y desde el inspector se asocian las instancias en la escena
@@ -38,15 +48,6 @@ public class Rocket : MonoBehaviour
 	[SerializeField] ParticleSystem victoryParticles;
 	// Partículas para la muerte
 	[SerializeField] ParticleSystem deathParticles;
-
-	// Estados del cohete
-	enum State { Alive, Dying, Trascending }
-
-	// Estado actual del cohete
-	State state = State.Alive;
-
-	// Tiempo de carga
-	float loadTime = 1f;
 
 	void Start()
 	{
@@ -63,68 +64,11 @@ public class Rocket : MonoBehaviour
 			RespondToThrustInput();
 			RespondToRotateInput();
 		}
-	}
-
-	// Si choca con un objeto
-	void OnCollisionEnter(Collision collision)
-	{
-		// Si no está vivo, nada
-		if (state != State.Alive) return;
-		// Si está vivo
-		switch (collision.gameObject.tag)
+		// Si es una build debug (una casilla antes de hacer la build)
+		if (Debug.isDebugBuild)
 		{
-			case "Friendly":
-				// No pasa nada
-				break;
-			case "Finish":
-				StartVictorySecuence();
-				break;
-			default:
-				StartDeathSecuence();
-				break;
+			RespondToDebugKeys();
 		}
-	}
-
-	// Secuencia para la victoria
-	private void StartVictorySecuence()
-	{
-		state = State.Trascending;
-		// Sonido de victoria
-		audioSource.Stop();
-		audioSource.PlayOneShot(victorySound);
-		// Partículas de victoria
-		mainEngineParticles.Stop();
-		victoryParticles.Play();
-		// Carga la siguiente escena en 1 s
-		Invoke("LoadNextLevel", loadTime);
-	}
-
-	// Secuencia para la muerte
-
-	private void StartDeathSecuence()
-	{
-		// Mueres
-		state = State.Dying;
-		// Sonido de muerte
-		audioSource.Stop();
-		audioSource.PlayOneShot(deathSound);
-		// Partículas de muerte
-		mainEngineParticles.Stop();
-		deathParticles.Play();
-		// Carga la siguiente escena en 1 s
-		Invoke("LoadFirstLevel", loadTime);
-	}
-
-	// Carga la siguiente escena (utilizado con invoke)
-	private void LoadNextLevel()
-	{
-		SceneManager.LoadScene(1);
-	}
-
-	// Carga la primera escena (utilizado con invoke)
-	private void LoadFirstLevel()
-	{
-		SceneManager.LoadScene(0);
 	}
 
 	// Propulsión del cohete
@@ -188,5 +132,82 @@ public class Rocket : MonoBehaviour
 
 		// Restablece el control de físicas automático
 		rigidBody.freezeRotation = false;
+	}
+
+	// Responde a las teclas debug para facilitar el testing
+	private void RespondToDebugKeys()
+	{
+		// L para cargar el siguiente nivel
+		if (Input.GetKeyDown(KeyCode.L))
+		{
+			LoadNextLevel();
+		}
+		// C para activar/desactivar las colisiones
+		else if (Input.GetKeyDown(KeyCode.C))
+		{
+			collisionsDisabled = !collisionsDisabled;
+		}
+	}
+
+	// Si choca con un objeto
+	void OnCollisionEnter(Collision collision)
+	{
+		// Si no está vivo, nada
+		if (state != State.Alive || collisionsDisabled) return;
+		// Si está vivo
+		switch (collision.gameObject.tag)
+		{
+			case "Friendly":
+				// No pasa nada
+				break;
+			case "Finish":
+				StartVictorySecuence();
+				break;
+			default:
+				StartDeathSecuence();
+				break;
+		}
+	}
+
+	// Secuencia para la victoria
+	private void StartVictorySecuence()
+	{
+		state = State.Trascending;
+		// Sonido de victoria
+		audioSource.Stop();
+		audioSource.PlayOneShot(victorySound);
+		// Partículas de victoria
+		mainEngineParticles.Stop();
+		victoryParticles.Play();
+		// Carga la siguiente escena en 1 s
+		Invoke("LoadNextLevel", loadTime);
+	}
+
+	// Secuencia para la muerte
+
+	private void StartDeathSecuence()
+	{
+		// Mueres
+		state = State.Dying;
+		// Sonido de muerte
+		audioSource.Stop();
+		audioSource.PlayOneShot(deathSound);
+		// Partículas de muerte
+		mainEngineParticles.Stop();
+		deathParticles.Play();
+		// Carga la siguiente escena en 1 s
+		Invoke("LoadFirstLevel", loadTime);
+	}
+
+	// Carga la siguiente escena (utilizado con invoke)
+	private void LoadNextLevel()
+	{
+		SceneManager.LoadScene(1);
+	}
+
+	// Carga la primera escena (utilizado con invoke)
+	private void LoadFirstLevel()
+	{
+		SceneManager.LoadScene(0);
 	}
 }
