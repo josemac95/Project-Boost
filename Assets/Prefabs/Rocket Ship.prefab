@@ -255,8 +255,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f070248cb7124ba4c930e9b46cfa78d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainThrust: 1000
-  rcsThrust: 250
+  mainThrust: 1500
+  rcsThrust: 300
   mainEngineSound: {fileID: 8300000, guid: e22b2712b23e1254e8f30df86a13bade, type: 3}
   victorySound: {fileID: 8300000, guid: 29524f23a1d70cf48a45935d7487f945, type: 3}
   deathSound: {fileID: 8300000, guid: 1cfbe67d57b2e7e459ce22a45315f42c, type: 3}
