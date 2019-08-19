@@ -24,10 +24,8 @@ public class Rocket : MonoBehaviour
 	// Tiempo de carga
 	float loadTime = 1f;
 
-	// Estados del cohete
-	enum State { Alive, Dying, Trascending }
-	// Estado actual del cohete
-	State state = State.Alive;
+	// Estado del cohete
+	bool isTransitioning = false;
 
 	// Colisiones desactivadas
 	bool collisionsDisabled = false;
@@ -58,8 +56,8 @@ public class Rocket : MonoBehaviour
 
 	void Update()
 	{
-		// Si está vivo permite el control
-		if (state == State.Alive)
+		// Si no está en una transición permite el control
+		if (!isTransitioning)
 		{
 			RespondToThrustInput();
 			RespondToRotateInput();
@@ -81,13 +79,11 @@ public class Rocket : MonoBehaviour
 		}
 		else
 		{
-			// Para el sonido del cohete
-			audioSource.Stop();
-			// Partículas del cohete
-			mainEngineParticles.Stop();
+			StopThrust();
 		}
 	}
 
+	// Aplica la propulsión
 	private void ApplyThrust()
 	{
 		// Fuerza relativa (coordenadas locales)
@@ -107,29 +103,39 @@ public class Rocket : MonoBehaviour
 		mainEngineParticles.Play();
 	}
 
+	// Para la propulsión
+	private void StopThrust()
+	{
+		// Para el sonido del cohete
+		audioSource.Stop();
+		// Partículas del cohete
+		mainEngineParticles.Stop();
+	}
+
 	// Rota el cohete
 	private void RespondToRotateInput()
 	{
-		// Control manual de la rotación
-		rigidBody.freezeRotation = true;
-
-		// Cantidad de rotación para este frame
-		// r · t es la velocidad de rotación
-		float rotationThisFrame = rcsThrust * Time.deltaTime;
-
 		// Rotación izquierda
 		if (Input.GetKey(KeyCode.A))
 		{
-			// Coordenadas locales
-			transform.Rotate(Vector3.forward * rotationThisFrame);
+			// r · t es la velocidad de rotación
+			RotateManually(rcsThrust * Time.deltaTime);
 		}
 		// Rotación derecha
 		else if (Input.GetKey(KeyCode.D))
 		{
-			// Coordenadas locales
-			transform.Rotate(-Vector3.forward * rotationThisFrame);
+			RotateManually(-rcsThrust * Time.deltaTime);
 		}
+	}
 
+	// Rota manualmente
+	// rotationThisFrame es la cantidad de rotación para este frame
+	private void RotateManually(float rotationThisFrame)
+	{
+		// Control manual de la rotación
+		rigidBody.freezeRotation = true;
+		// Coordenadas locales
+		transform.Rotate(Vector3.forward * rotationThisFrame);
 		// Restablece el control de físicas automático
 		rigidBody.freezeRotation = false;
 	}
@@ -152,9 +158,9 @@ public class Rocket : MonoBehaviour
 	// Si choca con un objeto
 	void OnCollisionEnter(Collision collision)
 	{
-		// Si no está vivo, nada
-		if (state != State.Alive || collisionsDisabled) return;
-		// Si está vivo
+		// Si está en una transición o no hay colisiones, nada
+		if (isTransitioning || collisionsDisabled) return;
+		// Si está vivo y se puede controlar
 		switch (collision.gameObject.tag)
 		{
 			case "Friendly":
@@ -172,7 +178,7 @@ public class Rocket : MonoBehaviour
 	// Secuencia para la victoria
 	private void StartVictorySecuence()
 	{
-		state = State.Trascending;
+		isTransitioning = true;
 		// Sonido de victoria
 		audioSource.Stop();
 		audioSource.PlayOneShot(victorySound);
@@ -184,11 +190,9 @@ public class Rocket : MonoBehaviour
 	}
 
 	// Secuencia para la muerte
-
 	private void StartDeathSecuence()
 	{
-		// Mueres
-		state = State.Dying;
+		isTransitioning = true;
 		// Sonido de muerte
 		audioSource.Stop();
 		audioSource.PlayOneShot(deathSound);
