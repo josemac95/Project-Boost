@@ -202,7 +202,9 @@ public class Rocket : MonoBehaviour
 	// Carga la siguiente escena (utilizado con invoke)
 	private void LoadNextLevel()
 	{
-		SceneManager.LoadScene(1);
+		int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+		int nextSceneIndex = (currentSceneIndex + 1) % SceneManager.sceneCountInBuildSettings;
+		SceneManager.LoadScene(nextSceneIndex);
 	}
 
 	// Carga la primera escena (utilizado con invoke)
